@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
+        
+        <h2 class="text-xl font-bold mt-6">Results</h2>
+        <input type="text" id="searchName" placeholder="Search by Student Name" class="w-full p-2 border rounded mb-2">
+        <button onclick="searchResult()" class="bg-green-500 text-white px-4 py-2 rounded">Search</button>
+        <ul id="resultsList" class="mt-4"></ul>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDNZ16gwzaWxVMY8EOvo2NekKeaJ_Zql1I",
+            authDomain: "attend-61616.firebaseapp.com",
+            projectId: "attend-61616",
+            storageBucket: "attend-61616.appspot.com",
+            messagingSenderId: "1022893657985",
+            appId: "1:1022893657985:web:d1d9e0929b221c835da280",
+            measurementId: "G-GP7RFCN0Z3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.addResult = async function() {
+            const name = document.getElementById('studentName').value;
+            const subject = document.getElementById('subject').value;
+            const marks = document.getElementById('marks').value;
+
+            if (!name || !subject || !marks) {
+                alert("Please fill all fields");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "results"), {
+                    name,
+                    subject,
+                    marks
+                });
+                alert("Result added successfully!");
+                loadResults();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+            }
+        };
+
+        async function loadResults() {
+            const resultsList = document.getElementById("resultsList");
+            resultsList.innerHTML = "";
+            const querySnapshot = await getDocs(collection(db, "results"));
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const li = document.createElement("li");
+                li.textContent = `${data.name} - ${data.subject}: ${data.marks} marks`;
+                resultsList.appendChild(li);
+            });
+        }
+
+        window.searchResult = async function() {
+            const searchName = document.getElementById("searchName").value.trim().toLowerCase();
+            const resultsList = document.getElementById("resultsList");
+            resultsList.innerHTML = "";
+            
+            if (!searchName) {
+                loadResults();
+                return;
+            }
+
+            const q = query(collection(db, "results"), where("name", "==", searchName));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) {
+                resultsList.innerHTML = "<li>No results found</li>";
+                return;
+            }
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const li = document.createElement("li");
+                li.textContent = `${data.name} - ${data.subject}: ${data.marks} marks`;
+                resultsList.appendChild(li);
+            });
+        };
+
+        loadResults();
+    </script>
+</body>
+</html>
